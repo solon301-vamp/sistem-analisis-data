@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+pandas
+openpyxl
+matplotlib
+google-generativeai
+python-multipart
+boto3
+python-dotenv

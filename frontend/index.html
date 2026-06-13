@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Dashboard Analisis Data AI</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <h1>📊 Dashboard Analisis Data AI</h1>
+    <p class="subtitle">Upload CSV/Excel → Analisis otomatis + Tanya AI</p>
+  </header>
+
+  <main>
+    <!-- Upload Section -->
+    <section class="card" id="upload-section">
+      <h2>1. Upload Data</h2>
+      <div class="upload-area" id="drop-zone">
+        <p>Drag & drop file CSV/Excel atau</p>
+        <label class="btn-upload">
+          Pilih File
+          <input type="file" id="file-input" accept=".csv,.xlsx,.xls" hidden>
+        </label>
+        <p class="hint" id="filename-label">Belum ada file dipilih</p>
+      </div>
+    </section>
+
+    <!-- Stats Section (muncul setelah upload) -->
+    <section class="card hidden" id="stats-section">
+      <h2>2. Ringkasan Data</h2>
+      <div id="stats-grid"></div>
+    </section>
+
+    <!-- Charts Section -->
+    <section class="card hidden" id="charts-section">
+      <h2>3. Visualisasi Distribusi</h2>
+      <div id="charts-grid"></div>
+    </section>
+
+    <!-- Chat Section -->
+    <section class="card hidden" id="chat-section">
+      <h2>4. Tanya AI tentang Data Anda</h2>
+      <div id="chat-box"></div>
+      <div class="chat-input">
+        <input type="text" id="chat-input" placeholder="Contoh: Kolom mana yang paling banyak data kosong?">
+        <button id="send-btn">Kirim</button>
+      </div>
+      <div class="quick-questions">
+        <p>Pertanyaan cepat:</p>
+        <button class="quick-btn">Buat ringkasan data ini</button>
+        <button class="quick-btn">Kolom apa yang perlu dibersihkan?</button>
+        <button class="quick-btn">Insight menarik dari data ini</button>
+      </div>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
