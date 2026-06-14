@@ -201,3 +201,33 @@ main {
 
 /* Full width stat card */
 .full-width { grid-column: 1 / -1; }
+
+/* Dataset table */
+.table-wrapper { overflow-x: auto; margin-top: 12px; }
+table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+thead { background: #4F7CFF; color: white; }
+th, td { padding: 8px 12px; text-align: left; border-bottom: 1px solid #e2e8f0; white-space: nowrap; }
+tr:hover { background: #f7f9ff; }
+.table-controls { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.table-controls input {
+  flex: 1;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 0.85rem;
+  outline: none;
+}
+.table-controls input:focus { border-color: #4F7CFF; }
+#row-count { font-size: 0.82rem; color: #666; white-space: nowrap; }
+.pagination { display: flex; align-items: center; justify-content: center; gap: 16px; margin-top: 12px; }
+.pagination button {
+  background: #f0f4ff;
+  color: #4F7CFF;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+.pagination button:hover { background: #4F7CFF; color: white; }
+#page-info { font-size: 0.85rem; color: #666; }

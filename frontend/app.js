@@ -7,8 +7,14 @@ const sendBtn = document.getElementById("send-btn");
 const chatBox = document.getElementById("chat-box");
 
 let allCharts = [];
+let fullData = [];
+let filteredData = [];
+let currentPage = 1;
+const rowsPerPage = 10;
 
-// Upload file
+// ========================
+// UPLOAD FILE
+// ========================
 fileInput.addEventListener("change", async () => {
   const file = fileInput.files[0];
   if (!file) return;
@@ -22,6 +28,7 @@ fileInput.addEventListener("change", async () => {
     const data = await res.json();
     filenameLabel.textContent = `✓ ${file.name} berhasil diupload`;
     renderStats(data);
+    renderDataset(data);
     renderAnalysis(data.stats_analysis);
     renderCharts(data.charts);
     showSections();
@@ -30,6 +37,9 @@ fileInput.addEventListener("change", async () => {
   }
 });
 
+// ========================
+// RINGKASAN DATA
+// ========================
 function renderStats(data) {
   const grid = document.getElementById("stats-grid");
   const totalNull = Object.values(data.nulls || {}).reduce((a, b) => a + b, 0);
@@ -47,6 +57,56 @@ function renderStats(data) {
   grid.innerHTML += `<div class="stat-card full-width"><div class="stat-label" style="margin-bottom:8px">Nama Kolom</div><div style="display:flex;flex-wrap:wrap;gap:6px">${cols}</div></div>`;
 }
 
+// ========================
+// PREVIEW DATASET
+// ========================
+function renderDataset(data) {
+  fullData = data.head || [];
+  filteredData = [...fullData];
+  currentPage = 1;
+  renderTable();
+
+  // Search
+  const searchInput = document.getElementById("search-input");
+  searchInput.value = "";
+  searchInput.onchange = null;
+  searchInput.addEventListener("input", (e) => {
+    const q = e.target.value.toLowerCase();
+    filteredData = fullData.filter(row =>
+      Object.values(row).some(v => String(v).toLowerCase().includes(q))
+    );
+    currentPage = 1;
+    renderTable();
+  });
+
+  document.getElementById("prev-btn").onclick = () => {
+    if (currentPage > 1) { currentPage--; renderTable(); }
+  };
+  document.getElementById("next-btn").onclick = () => {
+    if (currentPage < Math.ceil(filteredData.length / rowsPerPage)) { currentPage++; renderTable(); }
+  };
+}
+
+function renderTable() {
+  if (fullData.length === 0) return;
+  const columns = Object.keys(fullData[0]);
+  const start = (currentPage - 1) * rowsPerPage;
+  const pageData = filteredData.slice(start, start + rowsPerPage);
+  const totalPages = Math.ceil(filteredData.length / rowsPerPage) || 1;
+
+  document.getElementById("table-head").innerHTML =
+    `<tr>${columns.map(c => `<th>${c}</th>`).join("")}</tr>`;
+  document.getElementById("table-body").innerHTML =
+    pageData.map(row =>
+      `<tr>${columns.map(c => `<td>${row[c] ?? ""}</td>`).join("")}</tr>`
+    ).join("");
+  document.getElementById("page-info").textContent = `Halaman ${currentPage} / ${totalPages}`;
+  document.getElementById("row-count").textContent = `Menampilkan ${filteredData.length} dari ${fullData.length} baris (preview 5 baris pertama)`;
+}
+
+// ========================
+// ANALISIS STATISTIK
+// ========================
 function renderAnalysis(analysis) {
   if (!analysis) return;
   const grid = document.getElementById("analysis-grid");
@@ -54,18 +114,16 @@ function renderAnalysis(analysis) {
 
   // Outlier
   if (analysis.outliers && Object.keys(analysis.outliers).length > 0) {
-    html += `<div class="analysis-card warning">
-      <h3>⚠️ Outlier Terdeteksi</h3>`;
+    html += `<div class="analysis-card warning"><h3>⚠️ Outlier Terdeteksi</h3>`;
     for (const [col, info] of Object.entries(analysis.outliers)) {
-      html += `<p><strong>${col}</strong>: ${info.count} outlier (batas: ${info.lower_bound} - ${info.upper_bound})</p>`;
+      html += `<p><strong>${col}</strong>: ${info.count} outlier (batas: ${info.lower_bound} – ${info.upper_bound})</p>`;
     }
     html += `</div>`;
   }
 
   // Korelasi tinggi
   if (analysis.high_correlations && analysis.high_correlations.length > 0) {
-    html += `<div class="analysis-card info">
-      <h3>🔗 Korelasi Tinggi (≥ 0.7)</h3>`;
+    html += `<div class="analysis-card info"><h3>🔗 Korelasi Tinggi (≥ 0.7)</h3>`;
     for (const corr of analysis.high_correlations) {
       const strength = corr.value > 0 ? "positif" : "negatif";
       html += `<p><strong>${corr.col1}</strong> & <strong>${corr.col2}</strong>: ${corr.value} (${strength})</p>`;
@@ -75,8 +133,7 @@ function renderAnalysis(analysis) {
 
   // Skewness
   if (analysis.skewness && Object.keys(analysis.skewness).length > 0) {
-    html += `<div class="analysis-card success">
-      <h3>📐 Distribusi Tidak Normal (Skewed)</h3>`;
+    html += `<div class="analysis-card success"><h3>📐 Distribusi Tidak Normal (Skewed)</h3>`;
     for (const [col, info] of Object.entries(analysis.skewness)) {
       html += `<p><strong>${col}</strong>: ${info.type} (skew = ${info.value})</p>`;
     }
@@ -87,6 +144,9 @@ function renderAnalysis(analysis) {
   grid.innerHTML = html;
 }
 
+// ========================
+// VISUALISASI CHART
+// ========================
 function renderCharts(charts) {
   allCharts = charts;
   displayCharts("all");
@@ -128,23 +188,29 @@ function getChartLabel(c) {
   return labels[c.type] || c.type;
 }
 
+// ========================
+// SHOW SECTIONS
+// ========================
 function showSections() {
-  ["stats-section", "analysis-section", "charts-section", "export-section", "chat-section"].forEach(id => {
+  ["stats-section", "dataset-section", "analysis-section", "charts-section", "export-section", "chat-section"].forEach(id => {
     document.getElementById(id).classList.remove("hidden");
   });
 }
 
-// Export Excel
-document.getElementById("export-excel-btn").addEventListener("click", async () => {
+// ========================
+// EXPORT
+// ========================
+document.getElementById("export-excel-btn").addEventListener("click", () => {
   window.open(`${API}/export/excel`, "_blank");
 });
 
-// Export PDF (print browser)
 document.getElementById("export-pdf-btn").addEventListener("click", () => {
   window.print();
 });
 
-// Chat
+// ========================
+// CHAT AI
+// ========================
 async function sendMessage(text) {
   if (!text.trim()) return;
   appendMsg(text, "user");

@@ -3,13 +3,23 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib
 matplotlib.use('Agg')
-import io, base64, json
+import io, base64
 
 def process_file(file_bytes: bytes, filename: str) -> dict:
+    # Baca file
     if filename.endswith(".csv"):
         df = pd.read_csv(io.BytesIO(file_bytes))
     else:
         df = pd.read_excel(io.BytesIO(file_bytes))
+
+    # Konversi otomatis kolom yang seharusnya numerik
+    for col in df.columns:
+        try:
+            converted = pd.to_numeric(df[col], errors='coerce')
+            if converted.notna().sum() / len(df) > 0.5:
+                df[col] = converted
+        except:
+            pass
 
     numeric_cols = df.select_dtypes(include="number").columns.tolist()
     categorical_cols = df.select_dtypes(include="object").columns.tolist()
@@ -33,8 +43,6 @@ def process_file(file_bytes: bytes, filename: str) -> dict:
     if len(numeric_cols) >= 2:
         corr = df[numeric_cols].corr().round(3)
         stats_analysis["correlation"] = corr.to_dict()
-
-        # Temukan pasangan korelasi tinggi
         high_corr = []
         for i in range(len(numeric_cols)):
             for j in range(i+1, len(numeric_cols)):
@@ -64,7 +72,7 @@ def process_file(file_bytes: bytes, filename: str) -> dict:
             }
     stats_analysis["outliers"] = outliers
 
-    # Distribusi skewness
+    # Skewness
     skewness = {}
     for col in numeric_cols:
         skew_val = round(df[col].skew(), 3)
@@ -80,7 +88,7 @@ def process_file(file_bytes: bytes, filename: str) -> dict:
     # === VISUALISASI ===
     charts = []
 
-    # 1. Histogram untuk setiap kolom numerik
+    # 1. Histogram
     for col in numeric_cols[:4]:
         fig, ax = plt.subplots(figsize=(5, 3))
         df[col].dropna().plot(kind="hist", ax=ax, color="#4F7CFF", edgecolor="white", bins=15)
@@ -88,7 +96,7 @@ def process_file(file_bytes: bytes, filename: str) -> dict:
         ax.set_ylabel("Frekuensi")
         charts.append({"type": "histogram", "column": col, "image": fig_to_base64(fig)})
 
-    # 2. Bar chart untuk kolom kategorikal
+    # 2. Bar chart
     for col in categorical_cols[:2]:
         fig, ax = plt.subplots(figsize=(5, 3))
         df[col].value_counts().head(10).plot(kind="bar", ax=ax, color="#7C4FFF", edgecolor="white")
@@ -98,7 +106,7 @@ def process_file(file_bytes: bytes, filename: str) -> dict:
         plt.tight_layout()
         charts.append({"type": "bar", "column": col, "image": fig_to_base64(fig)})
 
-    # 3. Line chart untuk kolom numerik pertama
+    # 3. Line chart
     if len(numeric_cols) >= 1:
         fig, ax = plt.subplots(figsize=(6, 3))
         df[numeric_cols[0]].plot(ax=ax, color="#00C896", linewidth=1.5)
@@ -107,7 +115,7 @@ def process_file(file_bytes: bytes, filename: str) -> dict:
         plt.tight_layout()
         charts.append({"type": "line", "column": numeric_cols[0], "image": fig_to_base64(fig)})
 
-    # 4. Scatter plot antara 2 kolom numerik pertama
+    # 4. Scatter plot
     if len(numeric_cols) >= 2:
         fig, ax = plt.subplots(figsize=(5, 3))
         ax.scatter(df[numeric_cols[0]], df[numeric_cols[1]], alpha=0.6, color="#FF6B6B", s=30)
@@ -134,17 +142,16 @@ def process_file(file_bytes: bytes, filename: str) -> dict:
         plt.tight_layout()
         charts.append({"type": "heatmap", "image": fig_to_base64(fig)})
 
-    # 6. Box plot untuk deteksi outlier
+    # 6. Box plot
     if len(numeric_cols) >= 1:
-        cols_to_plot = numeric_cols[:5]
         fig, ax = plt.subplots(figsize=(6, 3))
-        df[cols_to_plot].boxplot(ax=ax)
+        df[numeric_cols[:5]].boxplot(ax=ax)
         ax.set_title("Box Plot (Deteksi Outlier)")
         ax.tick_params(axis='x', rotation=45)
         plt.tight_layout()
         charts.append({"type": "boxplot", "image": fig_to_base64(fig)})
 
-    # 7. Pie chart untuk kolom kategorikal pertama
+    # 7. Pie chart
     if len(categorical_cols) >= 1:
         fig, ax = plt.subplots(figsize=(5, 4))
         df[categorical_cols[0]].value_counts().head(6).plot(

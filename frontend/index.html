@@ -12,6 +12,7 @@
   </header>
 
   <main>
+    <!-- 1. Upload -->
     <section class="card" id="upload-section">
       <h2>1. Upload Data</h2>
       <div class="upload-area" id="drop-zone">
@@ -24,18 +25,41 @@
       </div>
     </section>
 
+    <!-- 2. Ringkasan -->
     <section class="card hidden" id="stats-section">
       <h2>2. Ringkasan Data</h2>
       <div id="stats-grid"></div>
     </section>
 
+    <!-- 3. Preview Dataset -->
+    <section class="card hidden" id="dataset-section">
+      <h2>3. Preview Dataset</h2>
+      <div class="table-controls">
+        <input type="text" id="search-input" placeholder="🔍 Cari data...">
+        <span id="row-count"></span>
+      </div>
+      <div class="table-wrapper">
+        <table id="data-table">
+          <thead id="table-head"></thead>
+          <tbody id="table-body"></tbody>
+        </table>
+      </div>
+      <div class="pagination">
+        <button id="prev-btn">← Prev</button>
+        <span id="page-info"></span>
+        <button id="next-btn">Next →</button>
+      </div>
+    </section>
+
+    <!-- 4. Analisis Statistik -->
     <section class="card hidden" id="analysis-section">
-      <h2>3. Analisis Statistik Otomatis</h2>
+      <h2>4. Analisis Statistik Otomatis</h2>
       <div id="analysis-grid"></div>
     </section>
 
+    <!-- 5. Visualisasi -->
     <section class="card hidden" id="charts-section">
-      <h2>4. Visualisasi Data</h2>
+      <h2>5. Visualisasi Data</h2>
       <div class="chart-filters">
         <button class="filter-btn active" data-type="all">Semua</button>
         <button class="filter-btn" data-type="histogram">Histogram</button>
@@ -49,16 +73,18 @@
       <div id="charts-grid"></div>
     </section>
 
+    <!-- 6. Export -->
     <section class="card hidden" id="export-section">
-      <h2>5. Export Hasil</h2>
+      <h2>6. Export Hasil</h2>
       <div class="export-buttons">
         <button id="export-excel-btn" class="btn-export">⬇️ Download Excel</button>
         <button id="export-pdf-btn" class="btn-export">⬇️ Download PDF</button>
       </div>
     </section>
 
+    <!-- 7. Chat AI -->
     <section class="card hidden" id="chat-section">
-      <h2>6. Tanya AI tentang Data Anda</h2>
+      <h2>7. Tanya AI tentang Data Anda</h2>
       <div id="chat-box"></div>
       <div class="chat-input">
         <input type="text" id="chat-input" placeholder="Contoh: Kolom mana yang paling berkorelasi?">
