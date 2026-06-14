@@ -145,3 +145,59 @@ main {
 .quick-questions p { font-size: 0.82rem; color: #666; }
 .quick-btn { background: #f0f4ff; color: #4F7CFF; font-size: 0.82rem; padding: 7px 12px; }
 .quick-btn:hover { background: #dde6ff; }
+/* Analysis cards */
+.analysis-card {
+  border-radius: 10px;
+  padding: 16px;
+  margin-bottom: 12px;
+}
+.analysis-card h3 { font-size: 0.95rem; margin-bottom: 10px; }
+.analysis-card p { font-size: 0.85rem; margin: 4px 0; color: #444; }
+.analysis-card.warning { background: #fff8e1; border-left: 4px solid #f59e0b; }
+.analysis-card.info { background: #e8f4ff; border-left: 4px solid #4F7CFF; }
+.analysis-card.success { background: #e8fff5; border-left: 4px solid #00C896; }
+
+/* Chart filters */
+.chart-filters { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+.filter-btn {
+  background: #f0f4ff;
+  color: #4F7CFF;
+  border: none;
+  padding: 6px 14px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 0.82rem;
+  transition: all 0.2s;
+}
+.filter-btn.active, .filter-btn:hover { background: #4F7CFF; color: white; }
+
+/* Charts grid */
+.chart-item { background: #f7f9ff; border-radius: 8px; padding: 12px; }
+.chart-label { font-size: 0.85rem; color: #555; margin-bottom: 8px; font-weight: 600; }
+.chart-item img { width: 100%; border-radius: 6px; }
+
+/* Export buttons */
+.export-buttons { display: flex; gap: 12px; flex-wrap: wrap; }
+.btn-export {
+  background: #00C896;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  transition: background 0.2s;
+}
+.btn-export:hover { background: #00a87e; }
+
+/* Column tags */
+.col-tag {
+  background: #f0f4ff;
+  color: #4F7CFF;
+  padding: 3px 8px;
+  border-radius: 5px;
+  font-size: 0.8rem;
+}
+
+/* Full width stat card */
+.full-width { grid-column: 1 / -1; }

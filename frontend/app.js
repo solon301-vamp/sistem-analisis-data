@@ -1,4 +1,4 @@
-const API = "http://<IP_EC2_KAMU>:8000"; // Ganti dengan IP EC2
+const API = "http://18.143.185.121:8000";
 
 const fileInput = document.getElementById("file-input");
 const filenameLabel = document.getElementById("filename-label");
@@ -6,11 +6,13 @@ const chatInput = document.getElementById("chat-input");
 const sendBtn = document.getElementById("send-btn");
 const chatBox = document.getElementById("chat-box");
 
+let allCharts = [];
+
 // Upload file
 fileInput.addEventListener("change", async () => {
   const file = fileInput.files[0];
   if (!file) return;
-  filenameLabel.textContent = `File: ${file.name} (mengupload...)`;
+  filenameLabel.textContent = `Mengupload ${file.name}...`;
 
   const form = new FormData();
   form.append("file", file);
@@ -20,6 +22,7 @@ fileInput.addEventListener("change", async () => {
     const data = await res.json();
     filenameLabel.textContent = `✓ ${file.name} berhasil diupload`;
     renderStats(data);
+    renderAnalysis(data.stats_analysis);
     renderCharts(data.charts);
     showSections();
   } catch (e) {
@@ -30,39 +33,123 @@ fileInput.addEventListener("change", async () => {
 function renderStats(data) {
   const grid = document.getElementById("stats-grid");
   const totalNull = Object.values(data.nulls || {}).reduce((a, b) => a + b, 0);
+  const numericCount = (data.numeric_cols || []).length;
+  const catCount = (data.categorical_cols || []).length;
+
   grid.innerHTML = `
     <div class="stat-card"><div class="stat-value">${data.rows}</div><div class="stat-label">Total Baris</div></div>
     <div class="stat-card"><div class="stat-value">${data.columns.length}</div><div class="stat-label">Jumlah Kolom</div></div>
+    <div class="stat-card"><div class="stat-value">${numericCount}</div><div class="stat-label">Kolom Numerik</div></div>
+    <div class="stat-card"><div class="stat-value">${catCount}</div><div class="stat-label">Kolom Kategorikal</div></div>
     <div class="stat-card"><div class="stat-value">${totalNull}</div><div class="stat-label">Data Kosong</div></div>
   `;
-  // Tambah info kolom
-  const cols = data.columns.map(c => `<span style="background:#f0f4ff;padding:3px 8px;border-radius:5px;font-size:0.8rem">${c}</span>`).join(" ");
-  grid.innerHTML += `<div class="stat-card" style="grid-column:1/-1"><div class="stat-label" style="margin-bottom:8px">Nama Kolom</div><div style="display:flex;flex-wrap:wrap;gap:6px">${cols}</div></div>`;
+  const cols = data.columns.map(c => `<span class="col-tag">${c}</span>`).join(" ");
+  grid.innerHTML += `<div class="stat-card full-width"><div class="stat-label" style="margin-bottom:8px">Nama Kolom</div><div style="display:flex;flex-wrap:wrap;gap:6px">${cols}</div></div>`;
+}
+
+function renderAnalysis(analysis) {
+  if (!analysis) return;
+  const grid = document.getElementById("analysis-grid");
+  let html = "";
+
+  // Outlier
+  if (analysis.outliers && Object.keys(analysis.outliers).length > 0) {
+    html += `<div class="analysis-card warning">
+      <h3>⚠️ Outlier Terdeteksi</h3>`;
+    for (const [col, info] of Object.entries(analysis.outliers)) {
+      html += `<p><strong>${col}</strong>: ${info.count} outlier (batas: ${info.lower_bound} - ${info.upper_bound})</p>`;
+    }
+    html += `</div>`;
+  }
+
+  // Korelasi tinggi
+  if (analysis.high_correlations && analysis.high_correlations.length > 0) {
+    html += `<div class="analysis-card info">
+      <h3>🔗 Korelasi Tinggi (≥ 0.7)</h3>`;
+    for (const corr of analysis.high_correlations) {
+      const strength = corr.value > 0 ? "positif" : "negatif";
+      html += `<p><strong>${corr.col1}</strong> & <strong>${corr.col2}</strong>: ${corr.value} (${strength})</p>`;
+    }
+    html += `</div>`;
+  }
+
+  // Skewness
+  if (analysis.skewness && Object.keys(analysis.skewness).length > 0) {
+    html += `<div class="analysis-card success">
+      <h3>📐 Distribusi Tidak Normal (Skewed)</h3>`;
+    for (const [col, info] of Object.entries(analysis.skewness)) {
+      html += `<p><strong>${col}</strong>: ${info.type} (skew = ${info.value})</p>`;
+    }
+    html += `</div>`;
+  }
+
+  if (!html) html = `<p style="color:#666">Tidak ada anomali signifikan yang terdeteksi.</p>`;
+  grid.innerHTML = html;
 }
 
 function renderCharts(charts) {
+  allCharts = charts;
+  displayCharts("all");
+
+  document.querySelectorAll(".filter-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".filter-btn").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      displayCharts(btn.dataset.type);
+    });
+  });
+}
+
+function displayCharts(type) {
   const grid = document.getElementById("charts-grid");
-  grid.innerHTML = charts.map(c => `
-    <div>
-      <p style="font-size:0.85rem;color:#666;margin-bottom:6px">${c.column}</p>
-      <img src="data:image/png;base64,${c.image}" alt="Chart ${c.column}">
+  const filtered = type === "all" ? allCharts : allCharts.filter(c => c.type === type);
+  if (filtered.length === 0) {
+    grid.innerHTML = `<p style="color:#666;padding:16px">Tidak ada chart tipe ini untuk data kamu.</p>`;
+    return;
+  }
+  grid.innerHTML = filtered.map(c => `
+    <div class="chart-item">
+      <p class="chart-label">${getChartLabel(c)}</p>
+      <img src="data:image/png;base64,${c.image}" alt="Chart">
     </div>
   `).join("");
 }
 
+function getChartLabel(c) {
+  const labels = {
+    histogram: `📊 Histogram — ${c.column}`,
+    bar: `📊 Bar Chart — ${c.column}`,
+    line: `📈 Line Chart — ${c.column}`,
+    scatter: `⚡ Scatter Plot — ${c.col1} vs ${c.col2}`,
+    heatmap: `🌡️ Heatmap Korelasi`,
+    boxplot: `📦 Box Plot (Outlier)`,
+    pie: `🥧 Pie Chart — ${c.column}`
+  };
+  return labels[c.type] || c.type;
+}
+
 function showSections() {
-  ["stats-section", "charts-section", "chat-section"].forEach(id => {
+  ["stats-section", "analysis-section", "charts-section", "export-section", "chat-section"].forEach(id => {
     document.getElementById(id).classList.remove("hidden");
   });
 }
 
-// Chat dengan AI
+// Export Excel
+document.getElementById("export-excel-btn").addEventListener("click", async () => {
+  window.open(`${API}/export/excel`, "_blank");
+});
+
+// Export PDF (print browser)
+document.getElementById("export-pdf-btn").addEventListener("click", () => {
+  window.print();
+});
+
+// Chat
 async function sendMessage(text) {
   if (!text.trim()) return;
   appendMsg(text, "user");
   chatInput.value = "";
-  const loading = appendMsg("Gemini sedang menganalisis...", "loading");
-
+  const loading = appendMsg("AI sedang menganalisis...", "loading");
   try {
     const res = await fetch(`${API}/chat`, {
       method: "POST",
